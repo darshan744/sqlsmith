@@ -48,6 +48,7 @@ struct relation {
   virtual vector<column> &columns() { return cols; }
 };
 
+/// contains the cl name and their datatype
 struct named_relation : relation {
   string name;
   virtual string ident() { return name; }
