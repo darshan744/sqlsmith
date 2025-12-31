@@ -326,8 +326,8 @@ struct common_table_expression : prod {
 
 struct order_by_clause : prod {
   bool order_by_dsc;
-  column & order_by_column;
-  order_by_clause(prod *p , select_list select_list);
+  column * order_by_column = nullptr;
+  order_by_clause(prod *p , shared_ptr<select_list> select_list);
   virtual void out(std::ostream &out);
 };
 

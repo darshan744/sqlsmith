@@ -237,11 +237,11 @@ void query_spec::out(std::ostream &out) {
   out << *search;
   if (limit_clause.length()) {
     indent(out);
-    out << limit_clause;
+    out << limit_clause ;
   }
   if(orderby != nullptr) {
-    out << *orderby;
-  }
+    out << "\n" << *orderby;
+  } 
 }
 
 struct for_update_verify : prod_visitor {
@@ -316,10 +316,8 @@ query_spec::query_spec(prod *p, struct scope *s, bool lateral)
   set_quantifier = (d100() == 1) ? "distinct" : "";
   
   if(set_quantifier.empty()) {
-    orderby = make_shared<struct order_by_clause>(this , select_list.get());
+    orderby = make_shared<struct order_by_clause>(this , select_list);
   }
-
-
 
   search = bool_expr::factory(this);
 
@@ -448,20 +446,20 @@ upsert_stmt::upsert_stmt(prod *p, struct scope *s, table *v)
 shared_ptr<prod> statement_factory(struct scope *s) {
   try {
     s->new_stmt();
-    if (d42() == 1)
-      return make_shared<merge_stmt>((struct prod *)0, s);
-    if (d42() == 1)
-      return make_shared<insert_stmt>((struct prod *)0, s);
-    else if (d42() == 1)
-      return make_shared<delete_returning>((struct prod *)0, s);
-    else if (d42() == 1) {
-      return make_shared<upsert_stmt>((struct prod *)0, s);
-    } else if (d42() == 1)
-      return make_shared<update_returning>((struct prod *)0, s);
-    else if (d6() > 4)
-      return make_shared<select_for_update>((struct prod *)0, s);
-    else if (d6() > 5)
-      return make_shared<common_table_expression>((struct prod *)0, s);
+    // if (d42() == 1)
+    //   return make_shared<merge_stmt>((struct prod *)0, s);
+    // if (d42() == 1)
+    //   return make_shared<insert_stmt>((struct prod *)0, s);
+    // else if (d42() == 1)
+    //   return make_shared<delete_returning>((struct prod *)0, s);
+    // else if (d42() == 1) {
+    //   return make_shared<upsert_stmt>((struct prod *)0, s);
+    // } else if (d42() == 1)
+    //   return make_shared<update_returning>((struct prod *)0, s);
+    // else if (d6() > 4)
+    //   return make_shared<select_for_update>((struct prod *)0, s);
+    // else if (d6() > 5)
+    //   return make_shared<common_table_expression>((struct prod *)0, s);
     return make_shared<query_spec>((struct prod *)0, s);
   } catch (runtime_error &e) {
     return statement_factory(s);
@@ -643,17 +641,19 @@ shared_ptr<when_clause> when_clause::factory(struct merge_stmt *p) {
 
 
   
-order_by_clause::order_by_clause(prod * p , select_list select_list) : 
-  prod(p) , order_by_dsc(d6() > 4) , 
-  order_by_column(random_pick(select_list.derived_table.columns()))
-{}
+order_by_clause::order_by_clause(prod * p , shared_ptr<select_list> select_list) : 
+  prod(p) , order_by_dsc(d6() > 4)
+{
+  order_by_column = &random_pick(select_list->derived_table.columns());
+}
 
 void order_by_clause::out(std::ostream & out) {
   string order_by_str = "ORDER BY";
   out << order_by_str << " ";
-  out << order_by_column.name << " ";
+  out << order_by_column->name << " ";
   if(order_by_dsc) {
-    out << "DSC";
+    out << "DESC";
   }
   indent(out);
 }
+//git commit -m 'Fixed bug desc : Due to rvalue parameter the name property pointer was dangled hence made the select_list as shared_ptr for order_by_clause parameter"^C

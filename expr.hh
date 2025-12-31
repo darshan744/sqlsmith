@@ -7,6 +7,8 @@
 #include "prod.hh"
 #include <string>
 
+
+#include "schema.hh"
 using std::shared_ptr;
 using std::vector;
 using std::string;
