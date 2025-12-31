@@ -131,6 +131,7 @@ struct query_spec : prod {
   std::string set_quantifier;
   shared_ptr<struct from_clause> from_clause;
   shared_ptr<struct select_list> select_list;
+  shared_ptr<struct order_by_clause> orderby;
   shared_ptr<bool_expr> search;
   std::string limit_clause;
   struct scope myscope;

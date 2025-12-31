@@ -1,5 +1,6 @@
 
 #include <cassert>
+#include <memory>
 #include <stdexcept>
 
 #include "grammar.hh"
@@ -238,6 +239,9 @@ void query_spec::out(std::ostream &out) {
     indent(out);
     out << limit_clause;
   }
+  if(orderby != nullptr) {
+    out << *orderby;
+  }
 }
 
 struct for_update_verify : prod_visitor {
@@ -310,6 +314,12 @@ query_spec::query_spec(prod *p, struct scope *s, bool lateral)
   select_list = make_shared<struct select_list>(this);
 
   set_quantifier = (d100() == 1) ? "distinct" : "";
+  
+  if(set_quantifier.empty()) {
+    orderby = make_shared<struct order_by_clause>(this , select_list.get());
+  }
+
+
 
   search = bool_expr::factory(this);
 
