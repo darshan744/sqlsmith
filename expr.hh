@@ -13,6 +13,8 @@ using std::shared_ptr;
 using std::vector;
 using std::string;
 
+
+/// Base class for expressions
 struct value_expr: prod {
   sqltype *type;
   virtual void out(std::ostream &out) = 0;
@@ -21,6 +23,7 @@ struct value_expr: prod {
   static shared_ptr<value_expr> factory(prod *p, sqltype *type_constraint = 0);
 };
 
+/// creates a express with CASE <CONDITION> THEN VALUE ELSE VALUE
 struct case_expr : value_expr {
   shared_ptr<value_expr> condition;
   shared_ptr<value_expr> true_expr;
@@ -30,6 +33,7 @@ struct case_expr : value_expr {
   virtual void accept(prod_visitor *v);
 };
 
+/// Aggregate functions or anything else
 struct funcall : value_expr {
   routine *proc;
   bool is_aggregate;
@@ -44,6 +48,7 @@ struct funcall : value_expr {
   }
 };
 
+/// Creates a subquery with returning only one row
 struct atomic_subselect : value_expr {
   table *tab;
   column *col;
@@ -53,6 +58,7 @@ struct atomic_subselect : value_expr {
   virtual void out(std::ostream &out);
 };
 
+// It gives out just a constant values
 struct const_expr: value_expr {
   std::string expr;
   const_expr(prod *p, sqltype *type_constraint = 0);
@@ -60,6 +66,8 @@ struct const_expr: value_expr {
   virtual ~const_expr() { }
 };
 
+/// A column reference from the chosen table for this query.
+/// it creates out table.column using the refs from the scope
 struct column_reference: value_expr {
   column_reference(prod *p, sqltype *type_constraint = 0);
   virtual void out(std::ostream &out) { out << reference; }
@@ -67,6 +75,8 @@ struct column_reference: value_expr {
   virtual ~column_reference() { }
 };
 
+/// It creates a COALESCE(a , b) sub expression
+/// It returns the first non-NULL element
 struct coalesce : value_expr {
   const char *abbrev_;
   vector<shared_ptr<value_expr> > value_exprs;
@@ -80,6 +90,8 @@ struct coalesce : value_expr {
   }
 };
 
+/// a NULLIF(a, b)
+/// NULLIF when a = b it returns null else a
 struct nullif : coalesce {
  virtual ~nullif() { };
      nullif(prod *p, sqltype *type_constraint = 0)
@@ -87,21 +99,25 @@ struct nullif : coalesce {
 	  { };
 };
 
+/// Base class for bool expressions
 struct bool_expr : value_expr {
   virtual ~bool_expr() { }
   bool_expr(prod *p) : value_expr(p) { type = scope->schema->booltype; }
   static shared_ptr<bool_expr> factory(prod *p);
 };
 
+/// only gives out 'where true | where false'
 struct truth_value : bool_expr {
   virtual ~truth_value() { }
   const char *op;
   virtual void out(std::ostream &out) { out << op; }
   truth_value(prod *p) : bool_expr(p) {
     op = ( (d6() < 4) ? scope->schema->true_literal : scope->schema->false_literal);
+    
   }
 };
 
+/// It outs "<expression> is NULL | <expression> is not null"
 struct null_predicate : bool_expr {
   virtual ~null_predicate() { }
   const char *negate;
@@ -119,6 +135,7 @@ struct null_predicate : bool_expr {
   }
 };
 
+/// Creates EXISTS (subquery)
 struct exists_predicate : bool_expr {
   shared_ptr<struct query_spec> subquery;
   virtual ~exists_predicate() { }
@@ -127,6 +144,7 @@ struct exists_predicate : bool_expr {
   virtual void accept(prod_visitor *v);
 };
 
+/// Base class binary operation 
 struct bool_binop : bool_expr {
   shared_ptr<value_expr> lhs, rhs;
   bool_binop(prod *p) : bool_expr(p) { }
@@ -138,6 +156,8 @@ struct bool_binop : bool_expr {
   }
 };
 
+/// creates a lhs (or|and) rhs 
+/// lhs and rhs are expressions
 struct bool_term : bool_binop {
   virtual ~bool_term() { }
   const char *op;
@@ -162,6 +182,7 @@ struct distinct_pred : bool_binop {
   }
 };
 
+/// only two column and comparison
 struct comparison_op : bool_binop {
   op *oper;
   comparison_op(prod *p);
