@@ -7,6 +7,7 @@
 #include <ostream>
 #include "relmodel.hh"
 #include <memory>
+#include <vector>
 #include "schema.hh"
 
 #include "prod.hh"
@@ -325,6 +326,8 @@ struct common_table_expression : prod {
 struct group_by : prod {
   group_by(prod* , shared_ptr<select_list>);
   std::vector<std::vector<column>> group_by_cols;
+  void printSimpleGroup(std::ostream & out , std::vector<column>);
+  void make_combo(int currentIndex , int perGroupCount , std::vector<column> & cols , std::vector<std::vector<column>> & result , std::vector<column> temporaryColumnHolder);
   bool isSimpleGroupBy;
   virtual void out(std::ostream &out);
 };
