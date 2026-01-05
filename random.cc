@@ -33,3 +33,8 @@ int d100() {
   static std::uniform_int_distribution<> pick(1, 100);
   return pick(smith::rng);
 }
+
+int dn(int n) {
+  static std::uniform_int_distribution<> pick(1, n);
+  return pick(smith::rng);
+}

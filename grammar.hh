@@ -322,4 +322,13 @@ struct common_table_expression : prod {
   common_table_expression(prod *parent, struct scope *s);
 };
 
+struct group_by : prod {
+  group_by(prod* , shared_ptr<select_list>);
+  std::vector<std::vector<column>> group_by_cols;
+  bool isSimpleGroupBy;
+  virtual void out(std::ostream &out);
+};
+
+
+
 #endif

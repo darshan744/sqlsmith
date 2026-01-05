@@ -1,8 +1,11 @@
+#include <memory>
+#include <ostream>
 #include <typeinfo>
 #include <numeric>
 #include <algorithm>
 #include <stdexcept>
 #include <cassert>
+#include <vector>
 
 #include "random.hh"
 #include "relmodel.hh"
@@ -679,5 +682,46 @@ shared_ptr<when_clause> when_clause::factory(struct merge_stmt *p)
     p->retry();
   }
   return factory(p);
+}
+
+
+void make_combo(int currentIndex , int perGroupCount , std::vector<column> & cols , std::vector<std::vector<column>> & result , std::vector<column> temporaryColumnHolder) {
+  
+  if(cols.size() == perGroupCount) {
+    result.push_back(temporaryColumnHolder);
+    return;
+  }
+
+  for(int i = currentIndex ; i < perGroupCount ;i++) {
+    temporaryColumnHolder.push_back(cols[i]);
+
+    make_combo(i+ 1, perGroupCount, cols, result, temporaryColumnHolder);
+
+    temporaryColumnHolder.pop_back();
+  }
+}
+
+group_by::group_by(prod *p , shared_ptr<select_list> select_list) : prod(p) {
+  /// Choose whether a simple group by or grouping set
+  isSimpleGroupBy = d12() > 6;
+
+  /// this contains all the columns that are selected for 
+  /// the current query
+  vector<column> cols = select_list->derived_table.columns();
+  /// we choose a subset of the selected columns randomly (might also have all the columns);
+  int chosenNumberOfColumns = dn(cols.size());
+
+  /// create a vector of the subset columns
+  vector<column> subColumns(cols.begin() , cols.begin() + chosenNumberOfColumns);
+
+  if (isSimpleGroupBy) {
+    group_by_cols.push_back(subColumns);
+  }
+  else {
+    /// how many columns to use for a single set in the grouping sets
+    int perGroupCount = dn(cols.size());
+    /// generates combination of column sets
+    make_combo(0 , perGroupCount , subColumns , group_by_cols , {});
+  }
 }
 

@@ -36,6 +36,6 @@ I random_pick(std::pair<I,I> iters) {
   return random_pick(iters.first, iters.second);
 }
 
-int d6(), d9(), d12(), d20(), d42(), d100();
+int d6(), d9(), d12(), d20(), d42(), d100() , dn(int n);
 
 #endif
