@@ -230,8 +230,10 @@ void query_spec::out(std::ostream& out) {
     indent(out);
     out << "where ";
     out << *search;
-    indent(out);
-    out << *group_by;
+    if(group_by){
+        indent(out);
+        out << *group_by;
+    }
     if (limit_clause.length()) {
         indent(out);
         out << limit_clause;
@@ -296,11 +298,16 @@ query_spec::query_spec(prod* p, struct scope* s, bool lateral)
     scope = &myscope;
     scope->tables = s->tables;
 
-    if (lateral) scope->refs = s->refs;
+    if (lateral) {
+        scope->refs = s->refs;
+        scope->group_by_columns = s->group_by_columns;
+    }
 
     from_clause = make_shared<struct from_clause>(this);
+    // if(d12() > 7) TODO : randomize
+
+        group_by = make_shared<struct group_by>(this);
     select_list = make_shared<struct select_list>(this);
-    group_by = make_shared<struct group_by>(this, select_list);
     set_quantifier = (d100() == 1) ? "distinct" : "";
 
     search = bool_expr::factory(this);
@@ -614,9 +621,9 @@ shared_ptr<when_clause> when_clause::factory(struct merge_stmt* p) {
     return factory(p);
 }
 
-group_by::group_by(prod* p, shared_ptr<select_list> select_list) : prod(p) {
+group_by::group_by(prod* p) : prod(p) {
     /// Choose whether a simple group by or grouping set
-    isSimpleGroupBy = d12() > 6;
+    isSimpleGroupBy = true || d12() > 6; // for now we will worry about group by alone
     /// From Clause adds its references for this query to this
 
     auto refs = p->scope->refs;
@@ -659,6 +666,11 @@ group_by::group_by(prod* p, shared_ptr<select_list> select_list) : prod(p) {
     } else {
         group_by_cols.push_back(resultantColumnReferences);
     }
+    // add to scope
+    /// TODO : Modify design to manage grouping sets
+    for(auto col : group_by_cols.front()) {
+        scope->group_by_columns.push_back(col);
+    }
 }
 
 void group_by::make_combo(
@@ -686,7 +698,7 @@ void group_by::out(std::ostream& out) {
         printSimpleGroup(out, group_by_cols.front());
         return;
     }
-    out << "GROUPING SETS ";
+    out << "GROUPING SETS (";
     for (auto iter = group_by_cols.begin(); iter != group_by_cols.end();
          iter++) {
         out << "( ";
@@ -696,6 +708,7 @@ void group_by::out(std::ostream& out) {
             out << ", ";
         }
     }
+    out << " ) ";
 }
 void group_by::printSimpleGroup(
     std::ostream& out, vector<std::pair<named_relation*, column*>>& cols) {

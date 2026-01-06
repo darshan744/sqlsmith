@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -72,16 +73,35 @@ void case_expr::accept(prod_visitor *v) {
 
 column_reference::column_reference(prod *p, sqltype *type_constraint)
     : value_expr(p) {
-    if (type_constraint) {
+    
+    if(!scope->isGroupByEmpty()) {
+        if(type_constraint) {
+            auto pairs = scope->groupByRefsOfType(type_constraint);
+            if(pairs.empty()) {
+                throw std::runtime_error("No group_by column matches type constraint");
+            }
+            auto picked = random_pick(pairs);
+            reference += picked.first->ident()  + "." + picked.second->name;
+            type = picked.second->type;
+            assert(type_constraint->consistent(type));
+        }
+        else {
+            auto [r , c] = random_pick(scope->group_by_columns);
+            reference += r->ident() + ".";
+            type = c->type;
+            reference += c->name;
+        }
+    }
+    else if (type_constraint) {
         auto pairs = scope->refs_of_type(type_constraint);
         auto picked = random_pick(pairs);
         reference += picked.first->ident() + "." + picked.second.name;
         type = picked.second.type;
         assert(type_constraint->consistent(type));
     } else {
-        named_relation *r = random_pick(scope->refs)
+        named_relation *r = random_pick(scope->refs);
 
-            reference += r->ident() + ".";
+        reference += r->ident() + ".";
         column &c = random_pick(r->columns());
         type = c.type;
         reference += c.name;

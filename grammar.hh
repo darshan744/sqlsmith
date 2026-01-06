@@ -324,7 +324,7 @@ struct common_table_expression : prod {
 };
 
 struct group_by : prod {
-    group_by(prod*, shared_ptr<select_list>);
+    group_by(prod*);
     /// here we will get either have multiple tuples for grouping sets or
     /// single vector for the group by
     /// i.e group_by_cols for grouping sets = { [ {t1 , c1} , {t2 , c2} ] , [
