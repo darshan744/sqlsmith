@@ -84,7 +84,7 @@ column_reference::column_reference(prod *p, sqltype *type_constraint) : value_ex
     type = picked.second.type;
     assert(type_constraint->consistent(type));
   } else {
-    named_relation *r = random_pick(scope->refs);
+    named_relation *r = random_pick(scope->refs)
 
     reference += r->ident() + ".";
     column &c = random_pick(r->columns());

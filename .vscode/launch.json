@@ -9,7 +9,7 @@
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/build/sqlsmith",
-        "args": ["--target=host=localhost dbname=sqlsmith" , "--exclude-catalog"],
+        "args": ["--target=host=localhost dbname=sqlsmith" , "--exclude-catalog" , "--dump-all-queries"],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}/build",
         "environment": [],
