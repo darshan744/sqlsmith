@@ -327,10 +327,11 @@ struct group_by : prod {
     group_by(prod*, shared_ptr<select_list>);
     /// here we will get either have multiple tuples for grouping sets or
     /// single vector for the group by
-    /// i.e group_by_cols for grouping sets = { [ {t1 , c1} , {t2 , c2} ] , [ {t3 , c3} ] }
-    /// for group by { [ {t1,c1} , { t2 , c2 } ] }
+    /// i.e group_by_cols for grouping sets = { [ {t1 , c1} , {t2 , c2} ] , [
+    /// {t3 , c3} ] } for group by { [ {t1,c1} , { t2 , c2 } ] }
     std::vector<vector<std::pair<named_relation*, column*>>> group_by_cols;
-    void printSimpleGroup(std::ostream& out, vector<std::pair<named_relation*, column*>> &);
+    void printSimpleGroup(std::ostream& out,
+                          vector<std::pair<named_relation*, column*>>&);
     void make_combo(
         int currentIndex, int perGroupCount,
         vector<std::pair<named_relation*, column*>>& cols,
