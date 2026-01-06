@@ -631,7 +631,7 @@ group_by::group_by(prod* p) : prod(p) {
     /// For random number for limit of references to choose
     int maxTableRef = dn(refs.size());
     std::unordered_set<named_relation*> deduplicatedChosenReferences;
-
+    maxTableRef = std::min(maxTableRef , (int)refs.size());
     /// We gotta take some refs from there and then limit the scope
     /// to these references such that select only takes references from these.
     while (deduplicatedChosenReferences.size() < maxTableRef) {
@@ -644,9 +644,13 @@ group_by::group_by(prod* p) : prod(p) {
     /// gonna have a pair of named_relation and column
     vector<std::pair<named_relation*, column*>> resultantColumnReferences;
     for (auto r : deduplicatedChosenReferences) {
+        if(r->columns().empty()) {
+            continue;
+        }
         /// deduplication of the columns selected
         std::unordered_set<column*> tempHolder;
         int relationsColumnlimit = dn(r->columns().size());
+        relationsColumnlimit = std::min(relationsColumnlimit , (int)r->columns().size());
         while (tempHolder.size() < relationsColumnlimit) {
             auto& col = random_pick(r->columns());
             if (tempHolder.insert(&col).second)
@@ -666,6 +670,7 @@ group_by::group_by(prod* p) : prod(p) {
     } else {
         group_by_cols.push_back(resultantColumnReferences);
     }
+    
     // add to scope
     /// TODO : Modify design to manage grouping sets
     for(auto col : group_by_cols.front()) {
