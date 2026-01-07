@@ -622,60 +622,7 @@ shared_ptr<when_clause> when_clause::factory(struct merge_stmt* p) {
 }
 
 group_by::group_by(prod* p) : prod(p) {
-    /// Choose whether a simple group by or grouping set
-    isSimpleGroupBy = true || d12() > 6; // for now we will worry about group by alone
-    /// From Clause adds its references for this query to this
-
-    auto refs = p->scope->refs;
-
-    /// For random number for limit of references to choose
-    int maxTableRef = dn(refs.size());
-    std::unordered_set<named_relation*> deduplicatedChosenReferences;
-    maxTableRef = std::min(maxTableRef , (int)refs.size());
-    /// We gotta take some refs from there and then limit the scope
-    /// to these references such that select only takes references from these.
-    while (deduplicatedChosenReferences.size() < maxTableRef) {
-        named_relation* chosenRelation = random_pick(refs);
-        deduplicatedChosenReferences.insert(chosenRelation);
-    }
-
-    /// Now we have references (Table or subquery etc..) chosen from the scope
-    /// randomly Now we gotta choose columns to add to the group by; for this we
-    /// gonna have a pair of named_relation and column
-    vector<std::pair<named_relation*, column*>> resultantColumnReferences;
-    for (auto r : deduplicatedChosenReferences) {
-        if(r->columns().empty()) {
-            continue;
-        }
-        /// deduplication of the columns selected
-        std::unordered_set<column*> tempHolder;
-        int relationsColumnlimit = dn(r->columns().size());
-        relationsColumnlimit = std::min(relationsColumnlimit , (int)r->columns().size());
-        while (tempHolder.size() < relationsColumnlimit) {
-            auto& col = random_pick(r->columns());
-            if (tempHolder.insert(&col).second)
-                resultantColumnReferences.emplace_back(r, &col);
-        }
-    }
-
-    /// Now we have pairs of {table.columns} or {subquery.columns} etc..
-    /// Now if we are using simple group by then just append these to the group
-    /// by If using grouping sets we gotta shuffle and make combinations for
-    /// these
-
-    if (!isSimpleGroupBy) {
-        vector<std::pair<named_relation*, column*>> temporaryHolder;
-        make_combo(0, dn(resultantColumnReferences.size()),
-                   resultantColumnReferences, group_by_cols, temporaryHolder);
-    } else {
-        group_by_cols.push_back(resultantColumnReferences);
-    }
     
-    // add to scope
-    /// TODO : Modify design to manage grouping sets
-    for(auto col : group_by_cols.front()) {
-        scope->group_by_columns.push_back(col);
-    }
 }
 
 void group_by::make_combo(
@@ -698,29 +645,5 @@ void group_by::make_combo(
 }
 
 void group_by::out(std::ostream& out) {
-    out << " GROUP BY ";
-    if (isSimpleGroupBy) {
-        printSimpleGroup(out, group_by_cols.front());
-        return;
-    }
-    out << "GROUPING SETS (";
-    for (auto iter = group_by_cols.begin(); iter != group_by_cols.end();
-         iter++) {
-        out << "( ";
-        printSimpleGroup(out, *iter);
-        out << ") ";
-        if (iter + 1 != group_by_cols.end()) {
-            out << ", ";
-        }
-    }
-    out << " ) ";
-}
-void group_by::printSimpleGroup(
-    std::ostream& out, vector<std::pair<named_relation*, column*>>& cols) {
-    for (auto iter = cols.begin(); iter != cols.end(); iter++) {
-        auto [reference, col] = *iter;
-        out << reference->name << "." << col->name;
-
-        if (iter + 1 != cols.end()) out << ", ";
-    }
+    
 }
