@@ -15,6 +15,7 @@ struct prod_visitor {
 
 /// Base class for AST nodes
 struct prod {
+    bool containsWindowFunction = false;
     /// Parent production that instanciated this one.  May be NULL for
     /// top-level productions.
     struct prod *pprod;

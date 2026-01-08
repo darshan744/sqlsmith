@@ -325,9 +325,6 @@ struct common_table_expression : prod {
 
 struct group_by : prod {
     group_by(prod* , shared_ptr<select_list>);
-    /// for grouping sets we need multiple groups of columns
-    /// for group by we need only one set
-    /// Hence lets keep it as 2D
     vector<string> group_by_cols;
     void printSimpleGroup(std::ostream& out,
                           vector<string>&);

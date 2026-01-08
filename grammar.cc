@@ -626,12 +626,13 @@ group_by::group_by(prod* p , shared_ptr<select_list> sl) : prod(p) {
 
     for(int i = 0 ; i < value_exprs.size() ; i++) {
         auto expr = value_exprs[i];
-        // if(
-        //     dynamic_cast<window_function*>(expr.get()) ||
-        //     dynamic_cast<funcall*>(expr.get())
-        // ){
-        //     continue;
-        // }
+        bool isAggregateFunction = dynamic_cast<funcall*>(expr.get()) && ((funcall*)expr.get())->is_aggregate;
+        if(
+            dynamic_cast<window_function*>(expr.get()) ||
+            isAggregateFunction
+        ){
+            continue;
+        }
 
         group_by_cols.push_back(columns[i].name);
     }

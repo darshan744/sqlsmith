@@ -12,6 +12,7 @@ using std::string;
 using std::vector;
 
 struct value_expr : prod {
+    bool containsWindowFunction = false;
     sqltype* type;
     virtual void out(std::ostream& out) = 0;
     virtual ~value_expr() {}
