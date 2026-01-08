@@ -324,19 +324,18 @@ struct common_table_expression : prod {
 };
 
 struct group_by : prod {
-    group_by(prod*);
-    /// here we will get either have multiple tuples for grouping sets or
-    /// single vector for the group by
-    /// i.e group_by_cols for grouping sets = { [ {t1 , c1} , {t2 , c2} ] , [
-    /// {t3 , c3} ] } for group by { [ {t1,c1} , { t2 , c2 } ] }
-    std::vector<vector<std::pair<named_relation*, column*>>> group_by_cols;
+    group_by(prod* , shared_ptr<select_list>);
+    /// for grouping sets we need multiple groups of columns
+    /// for group by we need only one set
+    /// Hence lets keep it as 2D
+    vector<string> group_by_cols;
     void printSimpleGroup(std::ostream& out,
-                          vector<std::pair<named_relation*, column*>>&);
+                          vector<string>&);
     void make_combo(
         int currentIndex, int perGroupCount,
-        vector<std::pair<named_relation*, column*>>& cols,
-        std::vector<vector<std::pair<named_relation*, column*>>>& result,
-        vector<std::pair<named_relation*, column*>>& temporaryColumnHolder);
+        vector<string>& cols,
+        std::vector<vector<string>>& result,
+        vector<string>& temporaryColumnHolder);
     bool isSimpleGroupBy;
     virtual void out(std::ostream& out);
 };

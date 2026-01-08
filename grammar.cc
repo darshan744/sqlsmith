@@ -206,7 +206,7 @@ select_list::select_list(prod* p) : prod(p) {
         shared_ptr<value_expr> e = value_expr::factory(this);
         value_exprs.push_back(e);
         ostringstream name;
-        name << "c" << columns++;
+        name << "c" << p->level << columns++;
         sqltype* t = e->type;
         assert(t);
         derived_table.columns().push_back(column(name.str(), t));
@@ -300,14 +300,13 @@ query_spec::query_spec(prod* p, struct scope* s, bool lateral)
 
     if (lateral) {
         scope->refs = s->refs;
-        scope->group_by_columns = s->group_by_columns;
     }
 
     from_clause = make_shared<struct from_clause>(this);
     // if(d12() > 7) TODO : randomize
 
-        group_by = make_shared<struct group_by>(this);
     select_list = make_shared<struct select_list>(this);
+        group_by = make_shared<struct group_by>(this , select_list);
     set_quantifier = (d100() == 1) ? "distinct" : "";
 
     search = bool_expr::factory(this);
@@ -621,15 +620,28 @@ shared_ptr<when_clause> when_clause::factory(struct merge_stmt* p) {
     return factory(p);
 }
 
-group_by::group_by(prod* p) : prod(p) {
-    
+group_by::group_by(prod* p , shared_ptr<select_list> sl) : prod(p) {
+    auto value_exprs = sl->value_exprs;
+    auto columns = sl->derived_table.columns();
+
+    for(int i = 0 ; i < value_exprs.size() ; i++) {
+        auto expr = value_exprs[i];
+        // if(
+        //     dynamic_cast<window_function*>(expr.get()) ||
+        //     dynamic_cast<funcall*>(expr.get())
+        // ){
+        //     continue;
+        // }
+
+        group_by_cols.push_back(columns[i].name);
+    }
 }
 
 void group_by::make_combo(
     int currentIndex, int perGroupCount,
-    vector<std::pair<named_relation*, column*>>& cols,
-    std::vector<vector<std::pair<named_relation*, column*>>>& result,
-    vector<std::pair<named_relation*, column*>>& temporaryColumnHolder) {
+    vector<string>& cols,
+    std::vector<vector<string>>& result,
+    vector<string>& temporaryColumnHolder) {
     if (temporaryColumnHolder.size() == perGroupCount) {
         result.push_back(temporaryColumnHolder);
         return;
@@ -643,7 +655,15 @@ void group_by::make_combo(
         temporaryColumnHolder.pop_back();
     }
 }
-
+void group_by::printSimpleGroup(std::ostream & out , vector<string>&s) {
+    for(int i = 0 ; i < s.size();i++) {
+        out << s[i];
+        if(i + 1 != s.size()) {
+            out << " , ";
+        }
+    }
+}
 void group_by::out(std::ostream& out) {
-    
+    out << "GROUP BY ";
+    printSimpleGroup(out , group_by_cols);
 }

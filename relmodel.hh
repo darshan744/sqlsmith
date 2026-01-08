@@ -81,12 +81,6 @@ struct scope {
     /// available to column_ref productions
     vector<named_relation*> refs;
     struct schema* schema;
-    vector<std::pair<named_relation*, column*>> group_by_columns;
-    
-    bool isGroupByEmpty(){
-        return group_by_columns.empty();
-    }
-
 
     /// Counters for prefixed stmt-unique identifiers
     shared_ptr<map<string, unsigned int>> stmt_seq;
@@ -105,16 +99,7 @@ struct scope {
                 if (t->consistent(c.type)) result.push_back(make_pair(r, c));
         return result;
     }
-    vector<pair<named_relation*, column*>> groupByRefsOfType(sqltype* t) {
-        vector<pair<named_relation*, column*>> result;
-        for (auto r : group_by_columns){
-            if(t->consistent(r.second->type)){
-                result.push_back(r);
-            }
-            //    if (t->consistent(c.type)) result.push_back(make_pair(r, c));
-        }
-        return result;
-    }
+    
     /** Generate unique identifier with prefix. */
     string stmt_uid(const char* prefix) {
         string result(prefix);
