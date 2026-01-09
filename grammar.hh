@@ -128,11 +128,26 @@ struct select_list : prod {
     }
 };
 
+struct group_by : prod {
+    group_by(prod* , shared_ptr<select_list>);
+    vector<string> group_by_cols;
+    void printSimpleGroup(std::ostream& out,
+                          vector<string>&);
+    void make_combo(
+        int currentIndex, int perGroupCount,
+        vector<string>& cols,
+        std::vector<vector<string>>& result,
+        vector<string>& temporaryColumnHolder);
+    bool isSimpleGroupBy;
+    virtual void out(std::ostream& out);
+};
+
+
 struct query_spec : prod {
     std::string set_quantifier;
     shared_ptr<struct from_clause> from_clause;
     shared_ptr<struct select_list> select_list;
-    shared_ptr<struct group_by> group_by;
+    shared_ptr<struct group_by> group_by_clause;
     shared_ptr<bool_expr> search;
     std::string limit_clause;
     struct scope myscope;
@@ -143,6 +158,7 @@ struct query_spec : prod {
         select_list->accept(v);
         from_clause->accept(v);
         search->accept(v);
+        group_by_clause->accept(v);
     }
 };
 
@@ -323,18 +339,16 @@ struct common_table_expression : prod {
     common_table_expression(prod* parent, struct scope* s);
 };
 
-struct group_by : prod {
-    group_by(prod* , shared_ptr<select_list>);
-    vector<string> group_by_cols;
-    void printSimpleGroup(std::ostream& out,
-                          vector<string>&);
-    void make_combo(
-        int currentIndex, int perGroupCount,
-        vector<string>& cols,
-        std::vector<vector<string>>& result,
-        vector<string>& temporaryColumnHolder);
-    bool isSimpleGroupBy;
-    virtual void out(std::ostream& out);
+struct caseExprVisitor : prod_visitor {
+    bool windowOrAggregateFound = false;
+    void visit(struct prod *p) { 
+        if(p == nullptr) return;
+        
+        if(p->isAggregateFunction() || p->isWindowFunction()) {
+            windowOrAggregateFound = true;
+        }
+        // p->accept(this);
+    }
 };
 
 #endif

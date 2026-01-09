@@ -41,6 +41,9 @@ struct funcall : value_expr {
         v->visit(this);
         for (auto p : parms) p->accept(v);
     }
+    virtual bool isAggregateFunction() override {
+        return is_aggregate;
+    }
 };
 
 struct atomic_subselect : value_expr {
@@ -182,6 +185,9 @@ struct window_function : value_expr {
         aggregate->accept(v);
         for (auto p : partition_by) p->accept(v);
         for (auto p : order_by) p->accept(v);
+    }
+    virtual bool isWindowFunction() override {
+        return true;
     }
 };
 

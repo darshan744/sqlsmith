@@ -230,9 +230,9 @@ void query_spec::out(std::ostream& out) {
     indent(out);
     out << "where ";
     out << *search;
-    if(group_by){
+    if(group_by_clause && !group_by_clause->group_by_cols.empty()){
         indent(out);
-        out << *group_by;
+        out << *group_by_clause;
     }
     if (limit_clause.length()) {
         indent(out);
@@ -306,7 +306,7 @@ query_spec::query_spec(prod* p, struct scope* s, bool lateral)
     // if(d12() > 7) TODO : randomize
 
     select_list = make_shared<struct select_list>(this);
-        group_by = make_shared<struct group_by>(this , select_list);
+        group_by_clause = make_shared<struct group_by>(this , select_list);
     set_quantifier = (d100() == 1) ? "distinct" : "";
 
     search = bool_expr::factory(this);
@@ -626,13 +626,14 @@ group_by::group_by(prod* p , shared_ptr<select_list> sl) : prod(p) {
 
     for(int i = 0 ; i < value_exprs.size() ; i++) {
         auto expr = value_exprs[i];
-        bool isAggregateFunction = dynamic_cast<funcall*>(expr.get()) && ((funcall*)expr.get())->is_aggregate;
         if(
-            dynamic_cast<window_function*>(expr.get()) ||
-            isAggregateFunction
+            expr->isWindowFunction() || expr->isAggregateFunction()
         ){
             continue;
         }
+        caseExprVisitor visitor;
+        expr->accept(&visitor);
+        if(visitor.windowOrAggregateFound) continue;
 
         group_by_cols.push_back(columns[i].name);
     }

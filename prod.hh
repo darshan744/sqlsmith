@@ -15,7 +15,12 @@ struct prod_visitor {
 
 /// Base class for AST nodes
 struct prod {
-    bool containsWindowFunction = false;
+    virtual bool isAggregateFunction() {
+        return false;
+    }
+    virtual bool isWindowFunction() {
+        return false;
+    }
     /// Parent production that instanciated this one.  May be NULL for
     /// top-level productions.
     struct prod *pprod;
