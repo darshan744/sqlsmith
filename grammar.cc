@@ -303,9 +303,9 @@ query_spec::query_spec(prod* p, struct scope* s, bool lateral)
     }
 
     from_clause = make_shared<struct from_clause>(this);
-    // if(d12() > 7) TODO : randomize
 
     select_list = make_shared<struct select_list>(this);
+    if(d12() > 7)
         group_by_clause = make_shared<struct group_by>(this , select_list);
     set_quantifier = (d100() == 1) ? "distinct" : "";
 
@@ -620,6 +620,12 @@ shared_ptr<when_clause> when_clause::factory(struct merge_stmt* p) {
     return factory(p);
 }
 
+void group_by::pushColumns(vector<string> & res , vector<shared_ptr<column_reference>> & cols) {
+    for(auto col : cols) {
+        res.push_back(col->reference);
+    }
+}
+
 group_by::group_by(prod* p , shared_ptr<select_list> sl) : prod(p) {
     auto value_exprs = sl->value_exprs;
     auto columns = sl->derived_table.columns();
@@ -629,14 +635,29 @@ group_by::group_by(prod* p , shared_ptr<select_list> sl) : prod(p) {
         if(
             expr->isWindowFunction() || expr->isAggregateFunction()
         ){
+            if(expr->isWindowFunction()) {
+                pushColumns(group_by_cols , (reinterpret_cast<window_function*>(expr.get()))->order_by); 
+
+                pushColumns(group_by_cols , (reinterpret_cast<window_function*>(expr.get()))->partition_by);
+            }
             continue;
         }
         caseExprVisitor visitor;
+        visitor.grp = this;
         expr->accept(&visitor);
         if(visitor.windowOrAggregateFound) continue;
 
         group_by_cols.push_back(columns[i].name);
     }
+
+    isSimpleGroupBy = d100() > 30;
+
+    if(!isSimpleGroupBy) {
+        vector<string> temporarColumnHolder;
+        auto maxPerSetSize = std::min((int)group_by_cols.size() , (int) dn(group_by_cols.size()));
+        make_combo(0 , maxPerSetSize , group_by_cols , grouping_sets_cols , temporarColumnHolder);
+    }
+    
 }
 
 void group_by::make_combo(
@@ -667,5 +688,18 @@ void group_by::printSimpleGroup(std::ostream & out , vector<string>&s) {
 }
 void group_by::out(std::ostream& out) {
     out << "GROUP BY ";
+    if(isSimpleGroupBy)
     printSimpleGroup(out , group_by_cols);
+    else {
+        out << "GROUPING SETS (";
+        for(auto iter = grouping_sets_cols.begin() ; iter != grouping_sets_cols.end();iter++) {
+            out << "( ";
+            printSimpleGroup(out , *iter);
+            out << " ) ";
+            if(iter + 1 != grouping_sets_cols.end()){
+                out << ", ";
+            }
+        }
+        out << ") ";
+    }
 }
