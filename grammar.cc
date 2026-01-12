@@ -653,11 +653,22 @@ group_by::group_by(prod* p , shared_ptr<select_list> sl) : prod(p) {
     isSimpleGroupBy = d100() > 30;
 
     if(!isSimpleGroupBy) {
-        vector<string> temporarColumnHolder;
-        auto maxPerSetSize = std::min((int)group_by_cols.size() , (int) dn(group_by_cols.size()));
-        make_combo(0 , maxPerSetSize , group_by_cols , grouping_sets_cols , temporarColumnHolder);
+        useRollUp = d20() > 10;
+        if(!useRollUp) {
+            vector<string> temporarColumnHolder;
+            auto maxPerSetSize = std::min((int)group_by_cols.size() , (int) dn(group_by_cols.size()));
+            // make_combo(0 , maxPerSetSize , group_by_cols , grouping_sets_cols , temporarColumnHolder);
+            make2DVector(group_by_cols , grouping_sets_cols);
+        }
     }
     
+}
+
+void group_by::make2DVector(vector<string> & source , vector<vector<string>> & result) {
+    for(auto iter = source.end(); iter > source.begin() ; iter++) {
+        result.emplace_back(source.begin() , iter);
+    }
+    result.emplace_back();
 }
 
 void group_by::make_combo(
@@ -678,6 +689,7 @@ void group_by::make_combo(
         temporaryColumnHolder.pop_back();
     }
 }
+
 void group_by::printSimpleGroup(std::ostream & out , vector<string>&s) {
     for(int i = 0 ; i < s.size();i++) {
         out << s[i];
@@ -686,10 +698,17 @@ void group_by::printSimpleGroup(std::ostream & out , vector<string>&s) {
         }
     }
 }
+
 void group_by::out(std::ostream& out) {
     out << "GROUP BY ";
     if(isSimpleGroupBy)
-    printSimpleGroup(out , group_by_cols);
+        printSimpleGroup(out , group_by_cols);
+    else if(useRollUp) {
+        out << " ROLL UP ";
+        out << "(";
+        printSimpleGroup(out , group_by_cols);
+        out << ") ";
+    }
     else {
         out << "GROUPING SETS (";
         for(auto iter = grouping_sets_cols.begin() ; iter != grouping_sets_cols.end();iter++) {

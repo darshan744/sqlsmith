@@ -129,21 +129,22 @@ struct select_list : prod {
 };
 
 struct group_by : prod {
-    group_by(prod* , shared_ptr<select_list>);
+    group_by(prod*, shared_ptr<select_list>);
+
     vector<string> group_by_cols;
     vector<vector<string>> grouping_sets_cols;
-    void pushColumns(vector<string> & res , vector<shared_ptr<column_reference>> & cols);
-    void printSimpleGroup(std::ostream& out,
-                          vector<string>&);
-    void make_combo(
-        int currentIndex, int perGroupCount,
-        vector<string>& cols,
-        std::vector<vector<string>>& result,
-        vector<string>& temporaryColumnHolder);
-    bool isSimpleGroupBy;
+    void pushColumns(vector<string>& res,
+                     vector<shared_ptr<column_reference>>& cols);
+    void printSimpleGroup(std::ostream& out, vector<string>&);
+    void make_combo(int currentIndex, int perGroupCount, vector<string>& cols,
+                    std::vector<vector<string>>& result,
+                    vector<string>& temporaryColumnHolder);
+    void make2DVector(vector<string>& source, vector<vector<string>>& result);
     virtual void out(std::ostream& out);
-};
 
+    bool isSimpleGroupBy;
+    bool useRollUp = false;
+};
 
 struct query_spec : prod {
     std::string set_quantifier;
@@ -160,8 +161,7 @@ struct query_spec : prod {
         select_list->accept(v);
         from_clause->accept(v);
         search->accept(v);
-        if(group_by_clause)
-        group_by_clause->accept(v);
+        if (group_by_clause) group_by_clause->accept(v);
     }
 };
 
@@ -344,14 +344,14 @@ struct common_table_expression : prod {
 
 struct caseExprVisitor : prod_visitor {
     bool windowOrAggregateFound = false;
-    group_by * grp;
-    void visit(struct prod *p) { 
-        if(p == nullptr) return;
-        
-        if(p->isAggregateFunction() || p->isWindowFunction()) {
+    group_by* grp;
+    void visit(struct prod* p) {
+        if (p == nullptr) return;
+
+        if (p->isAggregateFunction() || p->isWindowFunction()) {
             windowOrAggregateFound = true;
         }
-        if(p->isWindowFunction()){
+        if (p->isWindowFunction()) {
             auto func = reinterpret_cast<window_function*>(p);
             grp->pushColumns(grp->group_by_cols, func->order_by);
 
