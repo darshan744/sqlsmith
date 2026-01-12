@@ -665,7 +665,7 @@ group_by::group_by(prod* p , shared_ptr<select_list> sl) : prod(p) {
 }
 
 void group_by::make2DVector(vector<string> & source , vector<vector<string>> & result) {
-    for(auto iter = source.end(); iter > source.begin() ; iter++) {
+    for(auto iter = source.end(); iter > source.begin() ; iter--) {
         result.emplace_back(source.begin() , iter);
     }
     result.emplace_back();
@@ -704,7 +704,7 @@ void group_by::out(std::ostream& out) {
     if(isSimpleGroupBy)
         printSimpleGroup(out , group_by_cols);
     else if(useRollUp) {
-        out << " ROLL UP ";
+        out << " ROLLUP ";
         out << "(";
         printSimpleGroup(out , group_by_cols);
         out << ") ";
