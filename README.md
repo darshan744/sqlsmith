@@ -1,6 +1,6 @@
 # SQLsmith
 
-![SQLsmith Logo](logo.png)
+![SQLsmith Logo](docs/logo.png)
 
 > "I love the smell of coredumps in the morning" - mba
 
