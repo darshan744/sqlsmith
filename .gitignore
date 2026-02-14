@@ -1,32 +1,47 @@
-Makefile.local
-config.h
+# Build artifacts
+build/
+cmake-build-*/
 *.o
+*.a
+*.so
+*.dylib
 sqlsmith
-*.xml
-TAGS
-html/
-.deps/
-Doxyfile
-INSTALL
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+
+# Autotools (if keeping)
 Makefile
 Makefile.in
-aclocal.m4
+.deps/
+.libs/
+*.la
+*.lo
 autom4te.cache/
-compilation.log
-compile
-config.guess
+config.h
 config.h.in
-config.h.in~
 config.log
 config.status
-config.sub
 configure
+aclocal.m4
+compile
 depcomp
-gitrev.h
 install-sh
-latex/
 missing
 stamp-h1
-sqlsmith-*.tar.gz
-doxygen_sqlite3.db
-build/
+*.tar.gz
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Generated files
+gitrev.h
