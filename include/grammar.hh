@@ -360,4 +360,27 @@ struct caseExprVisitor : prod_visitor {
     }
 };
 
+struct set_operation : prod {
+    enum operation_type {
+        UNION,
+        INTERSECT,
+        EXCEPT
+    };
+    std::string order_by_clause;
+    operation_type op_type;
+    bool use_all;  // true for UNION ALL, false for UNION (DISTINCT)
+    
+    shared_ptr<prod> left_query;   // query_spec or another set_operation
+    shared_ptr<prod> right_query;  // query_spec or another set_operation
+    
+    relation derived_table;  // Result schema
+    struct scope myscope;
+    
+    set_operation(prod* parent, struct scope* s);
+    virtual void out(std::ostream& out);
+    virtual void accept(prod_visitor* v);
+private:
+    void unify_column_types();  // Ensure compatible types
+};
+
 #endif

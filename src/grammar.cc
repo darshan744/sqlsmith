@@ -429,23 +429,175 @@ upsert_stmt::upsert_stmt(prod* p, struct scope* s, table* v)
     constraint = random_pick(victim->constraints);
 }
 
+set_operation::set_operation(prod* parent, struct scope* s)
+    : prod(parent), myscope(s) {
+    scope = &myscope;
+    
+    // Choose operation type randomly
+    int op_choice = d6();
+    if (op_choice <= 3) {
+        op_type = UNION;
+    } else if (op_choice <= 5) {
+        op_type = INTERSECT;
+    } else {
+        op_type = EXCEPT;
+    }
+    
+    // 50% chance of ALL variant
+    use_all = (d6() > 3);
+    
+    // Generate left query (always a query_spec)
+    left_query = make_shared<query_spec>(this, s);
+    
+    // Get left query's schema
+    auto left_spec = dynamic_pointer_cast<query_spec>(left_query);
+    derived_table = left_spec->select_list->derived_table;
+    
+    // Generate right query with same column count
+    int target_columns = derived_table.columns().size();
+    int retry_count = 0;
+    
+retry:
+    if (retry_count++ > 100) {
+        throw runtime_error("Failed to generate matching set operation queries after 100 attempts");
+    }
+    
+    try {
+        // 30% chance of nested set_operation at level 0, 5% at deeper levels
+        int nest_threshold = (level == 0) ? 70 : 95;
+        if (d100() < nest_threshold || level >= 2) {
+            right_query = make_shared<query_spec>(this, s);
+        } else {
+            right_query = make_shared<set_operation>(this, s);
+        }
+        
+        // Validate column count matches
+        auto right_spec = dynamic_pointer_cast<query_spec>(right_query);
+        int right_col_count = 0;
+        
+        if (right_spec) {
+            right_col_count = right_spec->select_list->derived_table.columns().size();
+        } else {
+            auto right_setop = dynamic_pointer_cast<set_operation>(right_query);
+            if (right_setop) {
+                right_col_count = right_setop->derived_table.columns().size();
+            }
+        }
+        
+        if (right_col_count != target_columns) {
+            throw runtime_error("column count mismatch");
+        }
+        
+        unify_column_types();
+        
+    } catch (runtime_error& e) {
+        retry();
+        goto retry;
+    }
+    
+    // Generate ORDER BY clause (after both queries are created)
+    if (d6() > 4 && !derived_table.columns().empty()) {
+        order_by_clause = " ORDER BY ";
+        int num_cols = 1 + (d6() > 4 ? 1 : 0);  // 1-2 columns
+        for (int i = 0; i < num_cols && i < (int)derived_table.columns().size(); i++) {
+            if (i > 0) order_by_clause += ", ";
+            int col_idx = d6() % derived_table.columns().size();
+            order_by_clause += derived_table.columns()[col_idx].name;
+            order_by_clause += (d6() > 3) ? " ASC" : " DESC";
+        }
+        
+        // Add LIMIT clause sometimes
+        if (d6() == 6) {
+            order_by_clause += " LIMIT " + to_string(d100());
+        }
+    }
+}
+
+void set_operation::unify_column_types() {
+    // Get right query schema
+    relation* right_schema = nullptr;
+    
+    auto right_spec = dynamic_pointer_cast<query_spec>(right_query);
+    if (right_spec) {
+        right_schema = &right_spec->select_list->derived_table;
+    } else {
+        auto right_setop = dynamic_pointer_cast<set_operation>(right_query);
+        if (right_setop) {
+            right_schema = &right_setop->derived_table;
+        }
+    }
+    
+    if (!right_schema) return;
+    
+    // Type unification: result type is based on left query
+    // PostgreSQL does implicit casting, but we validate type consistency
+    for (size_t i = 0; i < derived_table.columns().size(); i++) {
+        auto& left_col = derived_table.columns()[i];
+        auto& right_col = right_schema->columns()[i];
+        
+        // If types are inconsistent, retry to generate compatible queries
+        if (!left_col.type->consistent(right_col.type)) {
+            throw runtime_error("Column type mismatch in set operation");
+        }
+    }
+}
+
+void set_operation::out(std::ostream& out) {
+    // Left query (with parentheses for clarity)
+    out << "(";
+    indent(out);
+    out << *left_query;
+    indent(out);
+    out << ")";
+    
+    indent(out);
+    
+    // Operation keyword
+    switch (op_type) {
+        case UNION:
+            out << "UNION";
+            break;
+        case INTERSECT:
+            out << "INTERSECT";
+            break;
+        case EXCEPT:
+            out << "EXCEPT";
+            break;
+    }
+    
+    // ALL qualifier
+    if (use_all) {
+        out << " ALL";
+    }
+    
+    indent(out);
+    
+    // Right query (with parentheses)
+    out << "(";
+    indent(out);
+    out << *right_query;
+    indent(out);
+    out << ")";
+    if (!order_by_clause.empty()) {
+        indent(out);
+        out << order_by_clause;
+    }
+}
+
+void set_operation::accept(prod_visitor* v) {
+    v->visit(this);
+    left_query->accept(v);
+    right_query->accept(v);
+}
+
 shared_ptr<prod> statement_factory(struct scope* s) {
     try {
         s->new_stmt();
-        // if (d42() == 1)
-        //   return make_shared<merge_stmt>((struct prod *)0, s);
-        // if (d42() == 1)
-        //   return make_shared<insert_stmt>((struct prod *)0, s);
-        // else if (d42() == 1)
-        //   return make_shared<delete_returning>((struct prod *)0, s);
-        // else if (d42() == 1) {
-        //   return make_shared<upsert_stmt>((struct prod *)0, s);
-        // } else if (d42() == 1)
-        //   return make_shared<update_returning>((struct prod *)0, s);
-        // else if (d6() > 4)
-        //   return make_shared<select_for_update>((struct prod *)0, s);
-        // else if (d6() > 5)
-        //   return make_shared<common_table_expression>((struct prod *)0, s);
+        int choice = d6();
+        if (choice == 6) 
+            return make_shared<set_operation>((struct prod *)0 , s);
+        else if (choice == 5)
+          return make_shared<common_table_expression>((struct prod *)0, s);
         return make_shared<query_spec>((struct prod*)0, s);
     } catch (runtime_error& e) {
         return statement_factory(s);
