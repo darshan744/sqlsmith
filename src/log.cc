@@ -3,15 +3,8 @@
 #include <pqxx/prepared_statement.hxx>
 #include <sstream>
 
-
-#ifndef HAVE_BOOST_REGEX
 #include <regex>
-#else
-#include <boost/regex.hpp>
-using boost::regex;
-using boost::regex_match;
-using boost::smatch;
-#endif
+
 
 #include <string>
 

@@ -25,3 +25,5 @@ CTestTestfile.cmake
 # Generated files
 gitrev.h.vscode/
 .cache
+
+compile_commands.json

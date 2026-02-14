@@ -14,14 +14,6 @@
 #include "relmodel.hh"
 #include "schema.hh"
 
-#ifdef HAVE_LIBSQLITE3
-#include "sqlite.hh"
-#endif
-
-#ifdef HAVE_MONETDB
-#include "monetdb.hh"
-#endif
-
 #include "postgres.hh"
 
 using namespace std;
@@ -66,16 +58,6 @@ int main(int argc, char *argv[]) {
         cerr << "    --target=connstr     postgres database to send queries to"
              << endl
              <<
-#ifdef HAVE_LIBSQLITE3
-            "    --sqlite=URI         SQLite database to send queries to"
-             << endl
-             <<
-#endif
-#ifdef HAVE_MONETDB
-            "    --monetdb=connstr    MonetDB database to send queries to"
-             << endl
-             <<
-#endif
             "    --log-to=connstr     log errors to postgres database" << endl
              << "    --seed=int           seed RNG with specified int instead "
                 "of PID"
@@ -106,27 +88,7 @@ int main(int argc, char *argv[]) {
 
     try {
         shared_ptr<schema> schema;
-        if (options.count("sqlite")) {
-#ifdef HAVE_LIBSQLITE3
-            schema = make_shared<schema_sqlite>(
-                options["sqlite"], options.count("exclude-catalog"));
-#else
-            cerr << "Sorry, " "SQLSMITH"
-                    " was compiled without SQLite support."
-                 << endl;
-            return 1;
-#endif
-        } else if (options.count("monetdb")) {
-#ifdef HAVE_MONETDB
-            schema = make_shared<schema_monetdb>(options["monetdb"]);
-#else
-            cerr << "Sorry, " "SQLSMITH"
-                    " was compiled without MonetDB support."
-                 << endl;
-            return 1;
-#endif
-        } else
-            schema = make_shared<schema_pqxx>(options["target"],
+        schema = make_shared<schema_pqxx>(options["target"],
                                               options.count("exclude-catalog"));
 
         scope scope;
@@ -177,27 +139,7 @@ int main(int argc, char *argv[]) {
         }
 
         shared_ptr<dut_base> dut;
-
-        if (options.count("sqlite")) {
-#ifdef HAVE_LIBSQLITE3
-            dut = make_shared<dut_sqlite>(options["sqlite"]);
-#else
-            cerr << "Sorry, " "SQLSMITH"
-                    " was compiled without SQLite support."
-                 << endl;
-            return 1;
-#endif
-        } else if (options.count("monetdb")) {
-#ifdef HAVE_MONETDB
-            dut = make_shared<dut_monetdb>(options["monetdb"]);
-#else
-            cerr << "Sorry, " "SQLSMITH"
-                    " was compiled without MonetDB support."
-                 << endl;
-            return 1;
-#endif
-        } else
-            dut = make_shared<dut_libpq>(options["target"]);
+        dut = make_shared<dut_libpq>(options["target"]);
 
         while (1) /* Loop to recover connection loss */
         {
