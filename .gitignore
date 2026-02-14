@@ -14,27 +14,6 @@ cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
 
-# Autotools (if keeping)
-Makefile
-Makefile.in
-.deps/
-.libs/
-*.la
-*.lo
-autom4te.cache/
-config.h
-config.h.in
-config.log
-config.status
-configure
-aclocal.m4
-compile
-depcomp
-install-sh
-missing
-stamp-h1
-*.tar.gz
-
 # IDE files
 .vscode/
 .idea/
