@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "sqlsmith",
+  "version": "1.4.0",
+  "description": "Random SQL query generator for PostgreSQL testing",
+  "dependencies": [
+    {
+      "name": "libpqxx",
+      "version>=": "7.7.0"
+    }
+  ],
+  "builtin-baseline": "latest"
+}
