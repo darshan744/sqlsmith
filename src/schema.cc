@@ -3,8 +3,6 @@
 #include <pqxx/pqxx>
 #include <typeinfo>
 
-#include "config.h"
-#include "gitrev.h"
 #include "relmodel.hh"
 
 using namespace std;

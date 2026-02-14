@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-#include "config.h"
-
 #ifndef HAVE_BOOST_REGEX
 #include <regex>
 #else
@@ -69,17 +67,13 @@ bool pg_type::consistent(sqltype *rvalue) {
 }
 
 dut_pqxx::dut_pqxx(std::string conninfo) : c(conninfo) {
-    c.set_variable("statement_timeout", "'1s'");
-    c.set_variable("client_min_messages", "'ERROR'");
-    c.set_variable("application_name", "'" PACKAGE "::dut'");
+    // c.set_variable("statement_timeout", "'1s'");
+    c.set_session_var("client_min_messages", "'ERROR'");
+    c.set_session_var("application_name", "'" "SQLSMITH" "::dut'");
 }
 
 void dut_pqxx::test(const std::string &stmt) {
     try {
-#ifndef HAVE_LIBPQXX7
-        if (!c.is_open()) c.activate();
-#endif
-
         pqxx::work w(c);
         w.exec(stmt.c_str());
         w.abort();
@@ -99,7 +93,7 @@ void dut_pqxx::test(const std::string &stmt) {
 }
 
 schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo) {
-    c.set_variable("application_name", "'" PACKAGE "::schema'");
+    c.set_session_var("application_name", "'" "SQLSMITH" "::schema'");
 
     pqxx::work w(c);
     pqxx::result r = w.exec("select version()");
@@ -305,11 +299,7 @@ schema_pqxx::schema_pqxx(std::string &conninfo, bool no_catalog) : c(conninfo) {
         }
     }
     cerr << "done." << endl;
-#ifdef HAVE_LIBPQXX7
     c.close();
-#else
-    c.disconnect();
-#endif
     generate_indexes();
 }
 
@@ -334,7 +324,7 @@ void dut_libpq::connect(std::string &conninfo) {
 
     command("set statement_timeout to '1s'");
     command("set client_min_messages to 'ERROR';");
-    command("set application_name to '" PACKAGE "::dut';");
+    command("set application_name to '" "SQLSMITH" "::dut';");
 
     PQsetNoticeReceiver(conn, dut_libpq_notice_rx, (void *)0);
 }

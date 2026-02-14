@@ -1,23 +1,12 @@
 #include <chrono>
 #include <iostream>
-
-#include "config.h"
-
-#ifndef HAVE_BOOST_REGEX
 #include <regex>
-#else
-#include <boost/regex.hpp>
-using boost::regex;
-using boost::regex_match;
-using boost::smatch;
-#endif
 
 #include <thread>
 #include <typeinfo>
 
 #include "dump.hh"
 #include "dut.hh"
-#include "gitrev.h"
 #include "grammar.hh"
 #include "impedance.hh"
 #include "log.hh"
@@ -55,7 +44,6 @@ extern "C" void cerr_log_handler(int) {
 }
 
 int main(int argc, char *argv[]) {
-    cerr << PACKAGE_NAME " " GITREV << endl;
 
     map<string, string> options;
     regex optregex(
@@ -123,7 +111,7 @@ int main(int argc, char *argv[]) {
             schema = make_shared<schema_sqlite>(
                 options["sqlite"], options.count("exclude-catalog"));
 #else
-            cerr << "Sorry, " PACKAGE_NAME
+            cerr << "Sorry, " "SQLSMITH"
                     " was compiled without SQLite support."
                  << endl;
             return 1;
@@ -132,7 +120,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MONETDB
             schema = make_shared<schema_monetdb>(options["monetdb"]);
 #else
-            cerr << "Sorry, " PACKAGE_NAME
+            cerr << "Sorry, " "SQLSMITH"
                     " was compiled without MonetDB support."
                  << endl;
             return 1;
@@ -194,7 +182,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_LIBSQLITE3
             dut = make_shared<dut_sqlite>(options["sqlite"]);
 #else
-            cerr << "Sorry, " PACKAGE_NAME
+            cerr << "Sorry, " "SQLSMITH"
                     " was compiled without SQLite support."
                  << endl;
             return 1;
@@ -203,7 +191,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MONETDB
             dut = make_shared<dut_monetdb>(options["monetdb"]);
 #else
-            cerr << "Sorry, " PACKAGE_NAME
+            cerr << "Sorry, " "SQLSMITH"
                     " was compiled without MonetDB support."
                  << endl;
             return 1;

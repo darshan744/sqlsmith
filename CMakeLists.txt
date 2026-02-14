@@ -12,6 +12,9 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+file(GLOB SQLSmith_SRC "src/*.cc")
+
 add_executable(${PROJECT_NAME} ${SQLSmith_SRC})
 target_include_directories(${PROJECT_NAME}
     PRIVATE
@@ -23,9 +26,9 @@ PRIVATE SQLSMITH_VERSION="${PROJECT_VERSION}")
 if(NOT CMAKE_TOOLCHAIN_FILE)
     message(
         FATAL
-        "Please install libpqxx and provide the vcpkg.cmae in CMAKE_TOOLCHAIN_FILE"
+        "Please install libpqxx and provide the vcpkg.cmake in CMAKE_TOOLCHAIN_FILE"
     )
 endif()
 
 find_package(libpqxx CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE libpqxx:pqxx)
+target_link_libraries(${PROJECT_NAME} PRIVATE libpqxx::pqxx)

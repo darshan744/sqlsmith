@@ -55,6 +55,7 @@ struct pqxx_logger : stats_collecting_logger {
     pqxx_logger(std::string target, std::string conninfo, struct schema &s);
     virtual void generated(prod &query);
     virtual void error(prod &query, const dut::failure &e);
+    bool ensure_connection();
 };
 
 #endif
